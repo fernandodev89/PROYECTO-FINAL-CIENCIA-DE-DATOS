@@ -293,6 +293,17 @@ El recorrido comprende el problema, los datos, la preparación, los principales 
 - [Archivo de resumen de equipamiento](https://guateendatos.org.gt/wp-content/uploads/encovi2023-equipamiento-resumen.xlsx?v=367801)
 - [Repositorio de referencia inicial para la estructura A–E](https://github.com/juanjluarca/data-science)
 
-La licencia específica y las condiciones de redistribución de los archivos derivados de OES DataLab **siguen pendientes de verificación**. No se atribuye a estos datos una licencia abierta sin confirmación. La disponibilidad pública no equivale por sí sola a autorización de redistribución.
+## Condiciones de uso de los datos
+
+Guate en Datos permite utilizar sus datos con fines educativos
+y redistribuirlos citando las fuentes correspondientes.
+
+Este proyecto reconoce al INE Guatemala como fuente estadística
+de ENCOVI 2023 y a OES DataLab / Guate en Datos como distribuidor
+de los archivos derivados utilizados. No se atribuye una licencia
+Creative Commons específica a los datos.
+
+Condiciones consultadas el 11 de noviembre de 2026:
+https://guateendatos.org.gt/sobre-guate-en-datos/
 
 Cualquier licencia que se incorpore para el código del proyecto deberá distinguirse de las condiciones aplicables a los datos de terceros.
