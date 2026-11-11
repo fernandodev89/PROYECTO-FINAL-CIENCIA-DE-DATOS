@@ -1,0 +1,19 @@
+// Crear cada medida por separado. El nombre de la consulta principal debe ser Equipamiento.
+
+Hogares de muestra = SUM(Grupos[HogaresMuestra])
+
+Hogares estimados = SUM(Grupos[HogaresExpandido])
+
+Hogares con artículo =
+IF(HASONEVALUE(Equipamiento[ArticuloClave]), SUM(Equipamiento[ConArticulo]), BLANK())
+
+Tenencia del artículo =
+IF(HASONEVALUE(Equipamiento[ArticuloClave]), DIVIDE(SUM(Equipamiento[ConArticulo]), SUM(Equipamiento[HogaresExpandido])), BLANK())
+
+Sin artículo =
+IF(HASONEVALUE(Equipamiento[ArticuloClave]), SUM(Equipamiento[HogaresExpandido])-SUM(Equipamiento[ConArticulo]), BLANK())
+
+Brecha de laptop pp =
+VAR NoPobre = CALCULATE([Tenencia del artículo],REMOVEFILTERS(Grupos[Pobreza]),Grupos[Pobreza]="No pobre",REMOVEFILTERS(Equipamiento[ArticuloClave],Equipamiento[Articulo],Equipamiento[Seccion],Equipamiento[ArticuloID]),Equipamiento[ArticuloClave]="2-2")
+VAR Extremo = CALCULATE([Tenencia del artículo],REMOVEFILTERS(Grupos[Pobreza]),Grupos[Pobreza]="Pobre extremo",REMOVEFILTERS(Equipamiento[ArticuloClave],Equipamiento[Articulo],Equipamiento[Seccion],Equipamiento[ArticuloID]),Equipamiento[ArticuloClave]="2-2")
+RETURN IF(NOT ISBLANK(NoPobre) && NOT ISBLANK(Extremo),100*(NoPobre-Extremo),BLANK())

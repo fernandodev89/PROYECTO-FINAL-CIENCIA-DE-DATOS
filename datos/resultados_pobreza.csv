@@ -1,0 +1,13 @@
+﻿Articulo,Pobreza,HogaresBase,HogaresConEquipo,TenenciaPct,Muestra
+Computadora de escritorio,No pobre,2199903.0,244081.0,11.09508010125901,5710
+Computadora laptop,No pobre,2199903.0,513528.0,23.343211041577742,5710
+Impresora,No pobre,2199903.0,333022.0,15.138031085916062,5710
+Tablet,No pobre,2199903.0,197941.0,8.99771489924783,5710
+Computadora de escritorio,Pobre extremo,452202.0,275.0,0.06081353023648723,1173
+Computadora laptop,Pobre extremo,452202.0,3476.0,0.7686830221891986,1173
+Impresora,Pobre extremo,452202.0,458.0,0.10128217035749511,1173
+Tablet,Pobre extremo,452202.0,370.0,0.08182184068181919,1173
+Computadora de escritorio,Pobre no extremo,1403365.0,35295.0,2.51502638301511,4047
+Computadora laptop,Pobre no extremo,1403365.0,56417.0,4.020123061356098,4047
+Impresora,Pobre no extremo,1403365.0,36720.0,2.6165680346880533,4047
+Tablet,Pobre no extremo,1403365.0,23990.0,1.709462613076427,4047

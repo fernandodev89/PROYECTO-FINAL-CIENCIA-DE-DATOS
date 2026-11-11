@@ -1,0 +1,12 @@
+Claves, rangos, denominadores y cobertura de artículos verificados.
+{
+  "Microdatos": 548200,
+  "HogaresMuestra": 10964,
+  "Articulos": 50,
+  "FilasResumen": 7400,
+  "Grupos": 148,
+  "HogaresSinClasificacion": 34,
+  "FilasPobrezaClasificada": 6600,
+  "MaxDiferenciaTasasPuntosPorcentuales": 0.004995562837052603
+}
+No se ejecutó Power BI Desktop.
