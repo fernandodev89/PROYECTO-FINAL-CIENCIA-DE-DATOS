@@ -1,0 +1,37 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Archivos locales de R y RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+Rplots.pdf
+
+# Archivos temporales de Quarto
+/.quarto/
+/*_files/
+/*.knit.md
+/*.utf8.md
+
+# Archivos de macOS y Windows
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporales y respaldos
+*.tmp
+*.bak
+~$*
+
+# Configuración privada
+.env
+.env.*
+!.env.example

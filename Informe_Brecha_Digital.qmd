@@ -1,0 +1,520 @@
+---
+title: "Brecha de equipamiento digital y pobreza en Guatemala"
+author: "Fernando Contreras Joshua Ascoli"
+lang: es
+format:
+  html:
+    toc: true
+    embed-resources: true
+output-file: Informe_Quarto.html
+engine: knitr
+execute:
+  echo: true
+  warning: true
+  message: false
+---
+
+# Introducción
+
+Este proyecto analiza la tenencia de equipos digitales en los hogares de Guatemala según pobreza, área de residencia y departamento, utilizando datos derivados de la ENCOVI 2023.
+
+Python se utiliza para leer, limpiar y validar los datos. R complementa el análisis estadístico y las visualizaciones. Quarto integra el código, los resultados y su interpretación en un documento reproducible.
+
+# Datos y preguntas de investigación
+
+## Preguntas
+
+1. ¿Cómo varía la tenencia de equipos digitales según la pobreza?
+2. ¿Qué diferencias existen entre áreas rurales y urbanas?
+3. ¿Cómo se distribuye el equipamiento entre departamentos?
+4. ¿Qué departamentos presentan perfiles similares de equipamiento?
+
+## Origen y cobertura
+
+Se utilizan dos archivos de equipamiento derivados de la ENCOVI 2023
+del Instituto Nacional de Estadística de Guatemala, difundidos por
+OES DataLab / Guate en Datos.
+
+El microdato contiene 548,200 registros: 10,964 hogares y 50 artículos
+por hogar. Cada fila representa un par hogar–artículo.
+
+El resumen contiene 7,400 filas correspondientes a 148 combinaciones
+de departamento, área y pobreza, para 50 artículos. Incluye los
+22 departamentos de Guatemala y las áreas rural y urbana.
+
+El análisis se concentra en computadoras de escritorio, laptops,
+impresoras y tablets. Los archivos fuente se conservan sin modificar
+en la carpeta `datos/`.
+
+## Variables principales
+
+| Variable | Tipo | Descripción |
+|---|---|---|
+| Departamento | Categórica | Departamento de residencia |
+| Area | Categórica | Rural o urbana |
+| Pobreza | Categórica | Clasificación de pobreza del hogar |
+| Articulo | Categórica | Equipo o bien registrado |
+| HogaresMuestra | Numérica | Hogares observados en el grupo |
+| HogaresExpandido | Numérica | Total expandido de hogares del grupo |
+| ConArticulo | Numérica | Hogares expandidos que poseen el artículo |
+| ValorMedianoQ | Numérica | Valor mediano de venta reportado, en quetzales |
+| AntiguedadMediaAnios | Numérica | Antigüedad media reportada, en años |
+
+## Preparación y controles de calidad
+
+- Se verificó la unicidad de las claves hogar–artículo en el microdato
+  y grupo–artículo en el resumen.
+- Se validaron denominadores positivos y conteos de hogares con artículo
+  comprendidos entre cero y el total expandido del grupo.
+- La categoría de pobreza `0` se identificó como `Sin clasificar`.
+  Corresponde a 34 hogares de la muestra y se excluyó de las
+  comparaciones socioeconómicas.
+- Los valores ausentes asociados a no poseer un artículo se conservaron
+  como nulos. No se sustituyeron por promedios.
+- Se registró una inconsistencia: un hogar declaró no poseer una plancha
+  eléctrica, pero informó una unidad. Se conservó el archivo original
+  y esa cantidad no se incluyó en el conteo de unidades de poseedores.
+- Se crearon `GrupoID`, `ArticuloClave` y `EsEquipoDigital` para identificar
+  grupos, artículos y los cuatro equipos seleccionados.
+- Los valores departamentales señalados como atípicos no se eliminaron
+  únicamente por su posición en el gráfico de cajas.
+
+## Cálculo de las tasas
+
+Para un mismo artículo y conjunto de grupos:
+
+$$
+\text{Tenencia (\%)} =
+100 \times
+\frac{\sum \text{ConArticulo}}
+{\sum \text{HogaresExpandido}}
+$$
+
+No se promedian porcentajes de grupos para estimar la tasa nacional.
+Tampoco se suman hogares poseedores de distintos equipos para calcular
+hogares con “algún equipo”, porque un hogar puede poseer varios.
+
+## Limitaciones y consideraciones éticas
+
+El microdato descargado carece de pobreza, territorio y factor de
+expansión. Por ello no se vincula artificialmente con esas variables;
+los cruces se calculan desde el resumen ponderado.
+
+Los conteos expandidos publicados están redondeados. No se dispone
+del diseño muestral completo para estimar su incertidumbre.
+
+Los resultados describen equipamiento en 2023. No miden internet,
+habilidades digitales ni rendimiento académico, y no demuestran
+causalidad. Se comunican resultados agregados y se evita estigmatizar
+a hogares o territorios.
+
+Las URL de procedencia se documentan en las referencias. La licencia
+específica y las condiciones de redistribución de los archivos derivados
+quedan pendientes de verificación; el acceso público no equivale
+automáticamente a una licencia abierta.
+
+# Preparación de los datos con Python
+
+El siguiente bloque ejecuta el procesamiento desde los archivos Excel incluidos en la carpeta `datos/`.
+
+```{r}
+#| label: configurar-python
+python <- Sys.which("python3")
+if (!nzchar(python)) python <- Sys.which("python")
+if (!nzchar(python)) stop("No se encontró Python.")
+reticulate::use_python(python, required = TRUE)
+```
+
+```{python}
+#| label: preparar-datos
+#| output: false
+import runpy
+import sys
+from pathlib import Path
+
+raiz = Path.cwd()
+if str(raiz) not in sys.path:
+    sys.path.insert(0, str(raiz))
+
+resultado = runpy.run_path(
+    str(raiz / "analisis.py"),
+    run_name="__main__"
+)
+```
+
+Las filas del microdato representan pares hogar–artículo; no deben interpretarse como hogares independientes. Las comparaciones por pobreza y territorio utilizan el resumen ponderado, porque el microdato descargado no contiene esas variables.
+
+# Análisis complementario con R
+
+El siguiente bloque lee los CSV preparados por Python y calcula la tenencia de laptop por área a partir de los conteos expandidos.
+
+```{r}
+#| label: ejecutar-analisis-r
+#| include: false
+source("analisis_complementario.R", local = TRUE)
+```
+
+```{r}
+#| label: grafica-areas
+#| fig-cap: "Tenencia de laptop en hogares rurales y urbanos."
+barplot(
+  resumen_area$TenenciaPct,
+  names.arg = resumen_area$Area,
+  col = "#507984",
+  main = "Tenencia de laptop por área",
+  ylab = "Porcentaje de hogares",
+  ylim = c(0, 30)
+)
+```
+
+La tasa se calcula dividiendo los hogares expandidos que poseen laptop entre el total de hogares expandidos del área. Se excluyen los hogares sin clasificación de pobreza.
+
+# Equipamiento digital según pobreza
+
+Se comparan las tasas de tenencia de cuatro equipos entre hogares
+no pobres, pobres no extremos y pobres extremos.
+
+```{r}
+#| label: resultados-pobreza
+resultados_pobreza <- read.csv(
+  "datos/resultados_pobreza.csv",
+  fileEncoding = "UTF-8-BOM",
+  stringsAsFactors = FALSE
+)
+
+knitr::kable(
+  resultados_pobreza[c("Articulo", "Pobreza", "TenenciaPct")],
+  digits = 2,
+  caption = "Tenencia de equipos por condición de pobreza (%)."
+)
+```
+
+```{r}
+#| label: graficas-pobreza
+#| fig-width: 9
+#| fig-height: 7
+#| fig-cap: "Porcentaje de hogares con cada equipo según pobreza."
+
+orden_pobreza <- c("No pobre", "Pobre no extremo", "Pobre extremo")
+equipos <- c(
+  "Computadora laptop",
+  "Computadora de escritorio",
+  "Tablet",
+  "Impresora"
+)
+
+configuracion <- par(mfrow = c(2, 2), mar = c(5, 9, 3, 1))
+
+for (equipo in equipos) {
+  tabla <- subset(resultados_pobreza, Articulo == equipo)
+  tabla <- tabla[match(orden_pobreza, tabla$Pobreza), ]
+
+  posiciones <- barplot(
+    rev(tabla$TenenciaPct),
+    names.arg = rev(tabla$Pobreza),
+    horiz = TRUE,
+    las = 1,
+    col = "#507984",
+    xlim = c(0, 30),
+    main = equipo,
+    xlab = "Porcentaje de hogares",
+    cex.names = 0.8
+  )
+
+  text(
+    x = rev(tabla$TenenciaPct),
+    y = posiciones,
+    labels = sprintf("%.2f %%", rev(tabla$TenenciaPct)),
+    pos = 4,
+    cex = 0.8
+  )
+}
+
+par(configuracion)
+```
+
+## Hallazgo principal
+
+```{r}
+#| label: brecha-laptop
+tasas_laptop <- subset(
+  resultados_pobreza,
+  Articulo == "Computadora laptop"
+)
+
+tasa_no_pobre <- tasas_laptop$TenenciaPct[
+  tasas_laptop$Pobreza == "No pobre"
+]
+
+tasa_extrema <- tasas_laptop$TenenciaPct[
+  tasas_laptop$Pobreza == "Pobre extremo"
+]
+
+brecha_laptop <- tasa_no_pobre - tasa_extrema
+```
+
+La tenencia de laptop alcanza el
+`r sprintf("%.2f", tasa_no_pobre)` % en hogares no pobres y el
+`r sprintf("%.2f", tasa_extrema)` % en hogares en pobreza extrema.
+La diferencia es de **`r sprintf("%.2f", brecha_laptop)`
+puntos porcentuales**.
+
+Esta diferencia describe una asociación entre pobreza y equipamiento.
+No permite establecer que la posesión de una laptop cause una reducción
+de la pobreza.
+
+# Distribución del equipamiento entre departamentos
+```{r}
+#| label: cajas-departamentales
+#| fig-width: 9
+#| fig-height: 5
+#| fig-cap: "Distribución de las 22 tasas departamentales por equipo."
+
+op <- par(mar = c(5, 12, 3, 1))
+
+boxplot(
+  TenenciaPct ~ Articulo,
+  data = tasas_departamento,
+  horizontal = TRUE,
+  las = 1,
+  col = "#507984",
+  xlab = "Tenencia departamental (%)",
+  ylab = ""
+)
+
+par(op)
+```
+
+```{r}
+#| label: tabla-descriptiva
+knitr::kable(
+  estadisticas,
+  digits = 2,
+  caption = "Estadísticas de las tasas de tenencia en los 22 departamentos (%)."
+)
+```
+
+La laptop presenta una mediana departamental de aproximadamente
+9.81 %, con tasas que van de 5.03 % a 29.10 %. Su desviación estándar
+entre departamentos es de 5.30 puntos porcentuales, la mayor de los
+cuatro equipos analizados.
+
+Estas estadísticas dan igual peso a cada departamento. Por tanto,
+la media departamental no equivale al porcentaje nacional de hogares
+que poseen el equipo.
+
+Los valores señalados como atípicos en el gráfico de cajas se conservan:
+una tasa elevada no constituye por sí sola un error. Tampoco demuestra
+una diferencia estadísticamente significativa, porque este análisis
+no incorpora la incertidumbre del diseño muestral.
+
+# Relaciones entre equipos
+
+Se calculan correlaciones de Spearman entre las tasas departamentales
+de los cuatro equipos. Cada observación corresponde a un departamento.
+
+```{r}
+#| label: tabla-correlaciones
+knitr::kable(
+  correlaciones,
+  digits = 3,
+  caption = "Correlaciones de Spearman entre tasas departamentales."
+)
+```
+
+Las correlaciones describen asociaciones territoriales. No permiten
+concluir que los mismos hogares poseen ambos equipos ni establecer
+relaciones causales. Tampoco incorporan la incertidumbre de las
+estimaciones de la encuesta.
+
+La mayor correlación territorial se observa entre computadoras de
+escritorio e impresoras (Spearman = 0.836), seguida de laptops e
+impresoras (0.738). Los departamentos con mayor tenencia de estos
+equipos tienden a ocupar posiciones similares en ambos indicadores.
+La asociación entre laptops y tablets es menor (0.366), lo que sugiere
+un orden territorial menos coincidente. Estos resultados corresponden
+a departamentos, no a la posesión conjunta de equipos en un mismo hogar.
+
+# Segmentación territorial mediante clustering
+
+## Método
+
+Se aplicó clustering jerárquico a los 22 departamentos utilizando
+las tasas de tenencia de computadoras de escritorio, laptops,
+impresoras y tablets.
+
+Las cuatro variables se estandarizaron para evitar que sus diferencias
+de escala dominaran el análisis. Se utilizó distancia euclidiana y
+el método Ward.D2. Cada departamento recibió igual peso.
+
+Se compararon soluciones de dos a cinco grupos mediante la silueta
+promedio: valores mayores indican una mejor separación interna.
+
+```{r}
+#| label: evaluacion-clustering
+knitr::kable(
+  evaluacion_clusters,
+  digits = 3,
+  caption = "Comparación de las soluciones de clustering."
+)
+```
+
+```{r}
+#| label: dendrograma
+#| fig-width: 10
+#| fig-height: 6
+#| fig-cap: "Agrupamiento jerárquico de departamentos según equipamiento."
+
+plot(
+  modelo_jerarquico,
+  main = "Perfiles departamentales de equipamiento",
+  xlab = "",
+  sub = paste("Ward.D2 — grupos seleccionados:", mejor_k),
+  cex = 0.7,
+  hang = -1
+)
+
+rect.hclust(modelo_jerarquico, k = mejor_k, border = 2:6)
+```
+
+## Resultados
+
+Entre las opciones evaluadas, la solución de dos grupos obtuvo
+la mayor silueta promedio (0.698).
+
+```{r}
+#| label: perfiles-clustering
+knitr::kable(
+  perfiles_clusters,
+  digits = 2,
+  caption = "Media de las tasas departamentales por grupo (%)."
+)
+```
+
+El grupo 2 reúne a Guatemala y Sacatepéquez y presenta mayores tasas
+promedio en los cuatro equipos. El grupo 1 contiene los otros
+20 departamentos y presenta tasas promedio inferiores.
+
+Estas medias dan igual peso a cada departamento; no representan
+porcentajes conjuntos de hogares de cada grupo.
+
+```{r}
+#| label: integrantes-clustering
+knitr::kable(
+  segmentacion,
+  row.names = FALSE,
+  caption = "Departamentos que integran cada grupo."
+)
+```
+
+## Interpretación y limitaciones
+
+La segmentación identifica perfiles territoriales de equipamiento.
+Puede orientar un diagnóstico más detallado para programas de acceso
+a dispositivos, pero no basta para asignar recursos sin evaluar
+necesidades locales.
+
+La división de 20 y 2 departamentos muestra que dos territorios se
+distinguen del resto. No implica que los 20 departamentos restantes
+sean homogéneos.
+
+La silueta mide separación interna, no precisión predictiva ni
+estabilidad ante cambios en los datos. Los grupos dependen de las
+variables, la estandarización y el método utilizados. No incorporan
+la incertidumbre del diseño muestral ni representan categorías de
+pobreza.
+
+# Dashboard interactivo
+
+El dashboard de Power BI complementa el informe con tres páginas:
+
+1. **Pobreza y tecnología:** compara cuatro equipos por pobreza y
+   permite filtrar por departamento y área.
+2. **Comparación territorial:** muestra la tenencia de laptop por
+   departamento y área, con un selector de pobreza.
+3. **Hallazgos y metodología:** resume resultados, preparación de
+   datos, limitaciones y propuesta de ingeniería.
+
+El archivo editable y su exportación PDF se encuentran en `powerbi/`.
+Las cifras del dashboard y del informe utilizan el mismo criterio:
+conteos expandidos para un artículo específico y exclusión de hogares
+sin clasificación de pobreza en las comparaciones.
+
+# Discusión y propuesta de ingeniería
+
+Las diferencias observadas muestran que la disponibilidad de equipos
+varía según pobreza y territorio. Esto plantea una condición relevante
+para diseñar sistemas educativos y servicios digitales: no se debe
+suponer que todos los usuarios disponen de computadora propia.
+
+Se propone evaluar un programa de reacondicionamiento y préstamo
+de computadoras, acompañado de centros comunitarios con software
+libre y capacitación. Las aplicaciones podrían ofrecer materiales
+descargables y funciones sin conexión, cuya pertinencia deberá
+validarse con información adicional sobre conectividad.
+
+La ubicación y los beneficiarios de un programa requieren un
+diagnóstico local. El clustering ofrece una descripción territorial,
+pero no constituye por sí solo una regla para asignar recursos.
+
+Un piloto podría registrar:
+
+- Equipos entregados, disponibilidad y fallas.
+- Personas beneficiadas y frecuencia de uso.
+- Costo por beneficiario.
+- Participación y finalización de la capacitación.
+
+Estos indicadores evaluarían la implementación. Atribuir mejoras
+educativas o económicas al programa requeriría un diseño de evaluación
+adicional.
+
+# Conclusiones
+
+1. En los datos de ENCOVI 2023, los hogares no pobres presentan mayores
+   tasas de tenencia de los cuatro equipos analizados que los hogares
+   en pobreza extrema.
+
+2. La tenencia de laptop es aproximadamente 21.11 % en áreas urbanas
+   y 4.89 % en áreas rurales, excluyendo hogares sin clasificación
+   de pobreza.
+
+3. Las tasas departamentales presentan diferencias importantes.
+   La segmentación jerárquica distingue a Guatemala y Sacatepéquez
+   del resto en la solución de dos grupos, sin implicar que los
+   otros 20 departamentos sean homogéneos.
+
+4. Las correlaciones describen asociaciones entre perfiles
+   departamentales. No identifican posesión conjunta en hogares
+   ni relaciones causales.
+
+5. La integración de Python, R, Quarto y Power BI permite documentar
+   la preparación, regenerar resultados y explorar los hallazgos.
+   Las decisiones deben considerar las limitaciones de la fuente
+   y la incertidumbre de las estimaciones.
+
+# Referencias
+
+- INE Guatemala. Información sobre pobreza y ENCOVI:
+  <https://www.ine.gob.gt/pobreza-menu/>
+- INE Guatemala. Guía para el uso de las bases de datos ENCOVI 2023:
+  <https://www.ine.gob.gt/wp-content/uploads/2024/11/Guia-para-el-uso-de-bases-de-datos_v_final.pdf>
+- OES DataLab / Guate en Datos. Portal de difusión:
+  <https://guateendatos.org.gt/oes-datalab/>
+- Archivo de equipamiento:
+  <https://guateendatos.org.gt/wp-content/uploads/encovi2023-equipamiento.xlsx?v=10226383>
+- Archivo de resumen:
+  <https://guateendatos.org.gt/wp-content/uploads/encovi2023-equipamiento-resumen.xlsx?v=367801>
+
+Los archivos utilizados son derivados difundidos por OES DataLab,
+no la base original completa del INE. La licencia específica y las
+condiciones de redistribución siguen pendientes de verificación.
+
+# Reproducibilidad
+
+Los bloques de Python y R se ejecutan al renderizar este documento. Las rutas son relativas a la carpeta del proyecto.
+
+```{r}
+#| label: versiones
+R.version.string
+reticulate::py_config()
+```
